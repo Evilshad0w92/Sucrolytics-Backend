@@ -317,10 +317,13 @@ def cordia_dia(fecha: date, zafra_id: str, user=Depends(get_current_user)):
         jm_tons_fecha = round(i40 + (jm_tons_raw or 0), 3)
 
         cana_tons_raw = qsum("""
-            SELECT ROUND(SUM(COALESCE(cana_molida_bruta_tons, cana_recibida_tons))::numeric, 3) AS v
-            FROM daily_molienda
-            WHERE org_id=%s AND zafra_id=%s AND date<=%s
-              AND COALESCE(cana_molida_bruta_tons, cana_recibida_tons) IS NOT NULL
+            SELECT ROUND(SUM(COALESCE(m.cana_molida_bruta_tons, m.cana_recibida_tons))::numeric, 3) AS v
+            FROM daily_molienda m
+            JOIN daily_lab_jugo_mezclado jm
+              ON jm.org_id=m.org_id AND jm.zafra_id=m.zafra_id AND jm.date=m.date
+            WHERE m.org_id=%s AND m.zafra_id=%s AND m.date<=%s
+              AND COALESCE(m.cana_molida_bruta_tons, m.cana_recibida_tons) IS NOT NULL
+              AND jm.tons IS NOT NULL
         """, (oid, zafra_id, fecha))
         cana_tons_fecha = round(i14 + (cana_tons_raw or 0), 3) if (i14 or cana_tons_raw is not None) else None
 
